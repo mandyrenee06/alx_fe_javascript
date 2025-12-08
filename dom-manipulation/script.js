@@ -6,51 +6,38 @@ let quotes = [
 
 const quoteDisplay = document.getElementById("quoteDisplay");
 const newQuoteBtn = document.getElementById("newQuote");
-const addQuoteBtn = document.getElementById("addQuoteBtn");
-const categorySelect = document.getElementById("categorySelect");
 
-function loadCategories() {
-  const categories = [...new Set(quotes.map(q => q.category))];
-  categorySelect.innerHTML = "";
 
-  categories.forEach(cat => {
-    const option = document.createElement("option");
-    option.value = cat;
-    option.textContent = cat;
-    categorySelect.appendChild(option);
-  });
-}
 function showRandomQuote() {
-  const selectedCategory = categorySelect.value;
-
-  const filteredQuotes = quotes.filter(q => q.category === selectedCategory);
-
-  if (filteredQuotes.length === 0) {
-    quoteDisplay.textContent = "No quotes available for this category.";
+  if (quotes.length === 0) {
+    quoteDisplay.textContent = "No quotes available.";
     return;
   }
-  const randomQuote = filteredQuotes[Math.floor(Math.random() * filteredQuotes.length)];
+
+  const randomIndex = Math.floor(Math.random() * quotes.length);
+  const randomQuote = quotes[randomIndex];
 
   quoteDisplay.textContent = `"${randomQuote.text}" — (${randomQuote.category})`;
 }
+
+newQuoteBtn.addEventListener("click", showRandomQuote);
+
+
 function addQuote() {
   const textInput = document.getElementById("newQuoteText");
   const categoryInput = document.getElementById("newQuoteCategory");
 
-  const newText = textInput.value.trim();
-  const newCategory = categoryInput.value.trim();
+  const text = textInput.value.trim();
+  const category = categoryInput.value.trim();
 
-  if (!newText || !newCategory) {
-    alert("Please enter both a quote and category.");
+  if (!text || !category) {
+    alert("Please add both a quote and a category.");
     return;
   }
-  quotes.push({ text: newText, category: newCategory });
-  loadCategories();
+
+  quotes.push({ text, category });
+  quoteDisplay.textContent = `"${text}" — (${category})`;
+
   textInput.value = "";
   categoryInput.value = "";
-
-  alert("Quote added successfully!");
 }
-newQuoteBtn.addEventListener("click", showRandomQuote);
-addQuoteBtn.addEventListener("click", addQuote);
-loadCategories();
