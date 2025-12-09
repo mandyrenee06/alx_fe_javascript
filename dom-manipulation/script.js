@@ -1,74 +1,81 @@
-// quotes array with objects containing text and category (required by checker)
+// Initial quotes
 let quotes = [
   { text: "Creativity is intelligence having fun.", category: "Creativity" },
   { text: "Innovation distinguishes between a leader and a follower.", category: "Innovation" },
-  { text: "The best way to predict the future is to create it.", category: "Motivation" }
+  { text: "The best way to predict the future is to create it.", category: "Motivation" },
 ];
 
-// DOM elements (IDs must match index.html)
+// DOM Elements
 const quoteDisplay = document.getElementById("quoteDisplay");
 const newQuoteBtn = document.getElementById("newQuote");
 const addQuoteBtn = document.getElementById("addQuoteBtn");
+const categorySelect = document.getElementById("categorySelect");
 
-// ------------------------------------------------------------------
-// Function: displayRandomQuote
-// - selects a random quote from quotes array
-// - updates the DOM (quoteDisplay)
-// ------------------------------------------------------------------
-function displayRandomQuote() {
-  if (!Array.isArray(quotes) || quotes.length === 0) {
-    quoteDisplay.textContent = "No quotes available.";
+// Populate categories dynamically
+function loadCategories() {
+  // Get unique categories
+  const categories = [...new Set(quotes.map(q => q.category))];
+
+  // Clear dropdown to avoid duplicates
+  categorySelect.innerHTML = "";
+
+  // Add categories to dropdown
+  categories.forEach(cat => {
+    const option = document.createElement("option");
+    option.value = cat;
+    option.textContent = cat;
+    categorySelect.appendChild(option);
+  });
+}
+
+// Show random quote from selected category
+function showRandomQuote() {
+  const selectedCategory = categorySelect.value;
+
+  // Filter quotes by category
+  const filteredQuotes = quotes.filter(q => q.category === selectedCategory);
+
+  if (filteredQuotes.length === 0) {
+    quoteDisplay.textContent = "No quotes available for this category.";
     return;
   }
 
-  const idx = Math.floor(Math.random() * quotes.length);
-  const q = quotes[idx];
+  // Pick a random quote
+  const randomQuote = filteredQuotes[Math.floor(Math.random() * filteredQuotes.length)];
 
-  // update DOM
-  quoteDisplay.textContent = `"${q.text}" — (${q.category})`;
+  // Update display
+  quoteDisplay.textContent = `"${randomQuote.text}" — (${randomQuote.category})`;
 }
 
-// Make sure function is reachable globally (some checkers look for this)
-window.displayRandomQuote = displayRandomQuote;
-
-// ------------------------------------------------------------------
-// Function: addQuote
-// - reads inputs, validates
-// - pushes a new object {text, category} into quotes array
-// - updates the DOM immediately with the newly added quote
-// ------------------------------------------------------------------
+// Add new quote dynamically
 function addQuote() {
   const textInput = document.getElementById("newQuoteText");
-  const catInput = document.getElementById("newQuoteCategory");
+  const categoryInput = document.getElementById("newQuoteCategory");
 
-  const text = textInput.value.trim();
-  const category = catInput.value.trim();
+  const newText = textInput.value.trim();
+  const newCategory = categoryInput.value.trim();
 
-  if (!text || !category) {
-    // minimal validation; checker cares that push and DOM update happen
-    alert("Please enter both a quote and a category.");
+  if (!newText || !newCategory) {
+    alert("Please enter both a quote and category.");
     return;
   }
 
-  // add to array (required by checker)
-  quotes.push({ text: text, category: category });
+  // Add to quotes array
+  quotes.push({ text: newText, category: newCategory });
 
-  // update DOM immediately (required by checker)
-  quoteDisplay.textContent = `"${text}" — (${category})`;
+  // Update category dropdown
+  loadCategories();
 
-  // clear inputs
+  // Clear inputs
   textInput.value = "";
-  catInput.value = "";
+  categoryInput.value = "";
+
+  alert("Quote added successfully!");
 }
 
-// also expose globally in case the checker searches global scope
-window.addQuote = addQuote;
-
-// ------------------------------------------------------------------
-// Event listeners (checker requires addEventListener on the "Show New Quote" button)
-// ------------------------------------------------------------------
-newQuoteBtn.addEventListener("click", displayRandomQuote);
+// Event Listeners
+newQuoteBtn.addEventListener("click", showRandomQuote);
 addQuoteBtn.addEventListener("click", addQuote);
 
-// Optional: show an initial quote on load so the display isn't empty
-displayRandomQuote();
+// Load categories on start
+loadCategories();
