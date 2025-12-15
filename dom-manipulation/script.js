@@ -1,14 +1,18 @@
 // ----------------------
+// Mock API URL
+// ----------------------
+const API_URL = "https://jsonplaceholder.typicode.com/posts";
+
+// ----------------------
 // Quotes Array
 // ----------------------
 let quotes = [
   { text: "The best way to get started is to quit talking and begin doing.", category: "Motivation" },
-  { text: "Creativity is intelligence having fun.", category: "Creativity" },
-  { text: "Success is not final; failure is not fatal.", category: "Inspiration" }
+  { text: "Creativity is intelligence having fun.", category: "Creativity" }
 ];
 
 // ----------------------
-// Local Storage Helpers
+// Storage Helpers
 // ----------------------
 function saveQuotes() {
   localStorage.setItem("quotes", JSON.stringify(quotes));
@@ -22,50 +26,56 @@ function loadQuotes() {
 }
 
 // ----------------------
-// Populate Categories (REQUIRED)
+// Fetch Quotes from Server (REQUIRED)
 // ----------------------
-function populateCategories() {
-  const categoryFilter = document.getElementById("categoryFilter");
+async function fetchQuotesFromServer() {
+  const response = await fetch(API_URL);
+  const data = await response.json();
 
-  // Reset dropdown
-  categoryFilter.innerHTML = `<option value="all">All Categories</option>`;
-
-  const categories = [...new Set(quotes.map(q => q.category))];
-
-  categories.forEach(category => {
-    const option = document.createElement("option");
-    option.value = category;
-    option.textContent = category;
-    categoryFilter.appendChild(option);
-  });
-
-  // Restore last selected category
-  const savedCategory = localStorage.getItem("selectedCategory");
-  if (savedCategory) {
-    categoryFilter.value = savedCategory;
-  }
+  // Simulate server quotes
+  return data.slice(0, 3).map(item => ({
+    text: item.title,
+    category: "Server"
+  }));
 }
 
 // ----------------------
-// Filter Quotes (REQUIRED)
+// Post Quote to Server (REQUIRED)
 // ----------------------
-function filterQuotes() {
-  const selectedCategory = document.getElementById("categoryFilter").value;
-  localStorage.setItem("selectedCategory", selectedCategory);
-
-  const quoteDisplay = document.getElementById("quoteDisplay");
-  quoteDisplay.innerHTML = "";
-
-  const filteredQuotes =
-    selectedCategory === "all"
-      ? quotes
-      : quotes.filter(q => q.category === selectedCategory);
-
-  filteredQuotes.forEach(quote => {
-    const p = document.createElement("p");
-    p.textContent = `"${quote.text}" — ${quote.category}`;
-    quoteDisplay.appendChild(p);
+async function postQuoteToServer(quote) {
+  await fetch(API_URL, {
+    method: "POST",
+    body: JSON.stringify(quote),
+    headers: {
+      "Content-Type": "application/json"
+    }
   });
+}
+
+// ----------------------
+// Sync Quotes (REQUIRED)
+// ----------------------
+async function syncQuotes() {
+  const serverQuotes = await fetchQuotesFromServer();
+
+  // Conflict resolution: SERVER WINS
+  quotes = serverQuotes;
+  saveQuotes();
+
+  showNotification("Quotes synced with server. Conflicts resolved.");
+  displayRandomQuote();
+}
+
+// ----------------------
+// UI Notification (REQUIRED)
+// ----------------------
+function showNotification(message) {
+  const notification = document.getElementById("notification");
+  notification.textContent = message;
+
+  setTimeout(() => {
+    notification.textContent = "";
+  }, 3000);
 }
 
 // ----------------------
@@ -91,12 +101,15 @@ function addQuote() {
   const text = textInput.value.trim();
   const category = categoryInput.value.trim();
 
-  if (text === "" || category === "") return;
+  if (!text || !category) return;
 
-  quotes.push({ text, category });
+  const newQuote = { text, category };
+  quotes.push(newQuote);
+
   saveQuotes();
-  populateCategories();
-  filterQuotes();
+  postQuoteToServer(newQuote);
+
+  showNotification("Quote added locally and sent to server.");
 
   textInput.value = "";
   categoryInput.value = "";
@@ -129,11 +142,16 @@ function createAddQuoteForm() {
 // Event Listeners
 // ----------------------
 document.getElementById("newQuote").addEventListener("click", displayRandomQuote);
+document.getElementById("syncButton").addEventListener("click", syncQuotes);
+
+// ----------------------
+// Periodic Sync (REQUIRED)
+// ----------------------
+setInterval(syncQuotes, 30000); // every 30 seconds
 
 // ----------------------
 // Initialize App
 // ----------------------
 loadQuotes();
 createAddQuoteForm();
-populateCategories();
-filterQuotes();
+displayRandomQuote();
